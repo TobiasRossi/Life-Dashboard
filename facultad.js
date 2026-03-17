@@ -146,9 +146,14 @@ async function loadMateriasAsync() {
   const def   = activeCarrera === 'li' ? MATERIAS_LI : MATERIAS_TPI;
 
   if (!rows.length) {
-    // First time: seed defaults for this user
-    _materiasCache = def;
-    await dbReplaceAll(table, def.map(m => ({ materia_id: m.id, estado: m.estado, nota: m.nota })));
+    // First time: seed all materias as pendiente (ignore hardcoded estados)
+    _materiasCache = def.map(m => ({ ...m, estado: 'pendiente', nota: null }));
+    await dbReplaceAll(table, def.map(m => ({
+      materia_id: m.id,
+      estado:     'pendiente',
+      nota:       null,
+      _isSeed:    true,
+    })));
     return _materiasCache;
   }
 
@@ -156,8 +161,8 @@ async function loadMateriasAsync() {
   const stateMap = Object.fromEntries(rows.map(r => [r.materia_id, r]));
   _materiasCache = def.map(m => ({
     ...m,
-    estado: stateMap[m.id]?.estado ?? m.estado,
-    nota:   stateMap[m.id]?.nota   ?? m.nota,
+    estado: stateMap[m.id]?.estado ?? 'pendiente',
+    nota:   stateMap[m.id]?.nota   ?? null,
     _dbId:  stateMap[m.id]?.id,
   }));
   return _materiasCache;
@@ -166,7 +171,6 @@ async function loadMateriasAsync() {
 async function saveMaterias(materias) {
   _materiasCache = materias;
   const table = activeCarrera === 'li' ? TBL_LI : TBL_TPI;
-  // Upsert only estado/nota rows (lightweight)
   const rows = materias.map(m => ({
     ...(m._dbId ? { id: m._dbId } : {}),
     materia_id: m.id,
@@ -287,7 +291,7 @@ function renderHorario(materias) {
     return;
   }
 
-  const matIds  = [...new Set(horario.map(h => h.materiaId))];
+  const matIds  = [...new Set(horario.map(h => h.materia_id || h.materiaId))];
   const colorOf = Object.fromEntries(matIds.map((id,i) => [id, COLORS[i % COLORS.length]]));
 
   // Track which cells are already occupied by a spanning class
@@ -305,8 +309,9 @@ function renderHorario(materias) {
 
       const clase = horario.find(c => c.dia === i+1 && c.hora === hora);
       if (clase) {
-        const mat   = materias.find(m => m.id === clase.materiaId);
-        const color = colorOf[clase.materiaId] || 'var(--accent)';
+        const mid   = clase.materia_id || clase.materiaId;
+        const mat   = materias.find(m => m.id === mid);
+        const color = colorOf[mid] || 'var(--accent)';
 
         // Calculate row span
         let span = 1;
@@ -341,7 +346,7 @@ const DIAS_LABEL = ['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado
 const HORAS_SLOT = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00',
                     '15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'];
 
-function getClasesForMateria(id) { return loadHorario().filter(h => h.materiaId === id); }
+function getClasesForMateria(id) { return loadHorario().filter(h => (h.materia_id || h.materiaId) === id); }
 
 async function saveClaseForMateria(materiaId, matNombre, d) {
   const toMin = t => { const [hh,mm] = t.split(':').map(Number); return hh*60+mm; };

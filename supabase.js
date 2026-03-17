@@ -23,29 +23,44 @@ async function signOut() {
 }
 
 // ── DB helpers ────────────────────────────────────────────
+
+// Load all rows for the current user
 async function dbLoad(table) {
   const { data, error } = await sb.from(table).select('*').order('id');
   if (error) { console.error(`dbLoad ${table}:`, error); return []; }
-  return data;
+  return data || [];
 }
 
+// Insert or update a single row — always injects user_id
 async function dbSave(table, row) {
-  const { data, error } = await sb.from(table).upsert(row).select().single();
+  const user = await getUser();
+  if (!user) return null;
+  const rowWithUser = { ...row, user_id: user.id };
+  const { data, error } = await sb.from(table).upsert(rowWithUser).select().single();
   if (error) { console.error(`dbSave ${table}:`, error); return null; }
   return data;
 }
 
+// Delete a row by id
 async function dbDelete(table, id) {
   const { error } = await sb.from(table).delete().eq('id', id);
   if (error) console.error(`dbDelete ${table}:`, error);
 }
 
+// Replace all rows for the current user — used for facultad materias
+// Seeds with all-pendiente state (ignores hardcoded estados from JS arrays)
 async function dbReplaceAll(table, rows) {
   const user = await getUser();
   if (!user) return;
   await sb.from(table).delete().eq('user_id', user.id);
   if (rows.length) {
-    const withUser = rows.map(r => ({ ...r, user_id: user.id }));
+    const withUser = rows.map(r => ({
+      ...r,
+      user_id: user.id,
+      // Force pendiente on initial seed — user updates from the UI
+      estado: r._isSeed ? 'pendiente' : (r.estado || 'pendiente'),
+      nota:   r._isSeed ? null : (r.nota ?? null),
+    }));
     const { error } = await sb.from(table).insert(withUser);
     if (error) console.error(`dbReplaceAll ${table}:`, error);
   }
