@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facultad — Life Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="shared.css">
+
+  <style>
+    /* ── Stats bar ────────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) 2fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-value span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-3);
+    }
+
+    /* Progress bar card */
+    .stat-progress {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .progress-track {
+      height: 8px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+
+    /* ── View toggle ─────────────────────────────────────── */
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    .view-btn {
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+      font-family: var(--font-ui);
+    }
+
+    .view-btn:hover { background: var(--surface-2); color: var(--text); }
+    .view-btn.active {
+      background: var(--accent-bg);
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* ── Roadmap grid ─────────────────────────────────────── */
+    .año-block {
+      margin-bottom: 28px;
+    }
+
+    .año-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .año-label {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .año-sub {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    .cuatris-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .cuatri-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cuatri-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+
+    /* ── Materia card ─────────────────────────────────────── */
+    .materia-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .1s;
+      position: relative;
+    }
+
+    .materia-card:hover {
+      border-color: var(--border-2);
+      background: var(--surface-2);
+      transform: translateY(-1px);
+    }
+
+    .materia-card.locked {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .materia-card.locked:hover { transform: none; }
+
+    .materia-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .materia-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .materia-nombre {
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    .lock-icon {
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .materia-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    .materia-nota {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .badge-estado {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: var(--text-3);
+    }
+
+    .materia-corr {
+      font-size: 10px;
+      color: var(--text-3);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Estado colors — left border accent */
+    .estado-aprobada  { border-left: 3px solid #34d399; }
+    .estado-cursando  { border-left: 3px solid var(--accent); }
+    .estado-pendiente { border-left: 3px solid var(--border-2); }
+    .estado-libre     { border-left: 3px solid var(--coral); }
+
+    /* ── Horario grid ─────────────────────────────────────── */
+    .horario-table {
+      display: grid;
+      grid-template-columns: 56px repeat(5, 1fr);
+      gap: 4px;
+    }
+
+    .h-cell {
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+
+    .h-header {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      text-align: center;
+      padding: 6px;
+    }
+
+    .h-corner { /* empty top-left cell */ }
+
+    .h-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .h-empty {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      min-height: 62px;
+    }
+
+    .h-clase {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      min-height: 62px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .h-clase-nombre {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .h-clase-sub {
+      font-size: 10px;
+      color: var(--text-3);
+    }
+
+    /* ── Modal ────────────────────────────────────────────── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(2px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      animation: fadeUp .2s ease;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      padding-right: 24px;
+    }
+
+    .modal-meta {
+      font-size: 12px;
+      color: var(--text-3);
+      font-family: var(--font-mono);
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px; right: 20px;
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color .15s;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font-ui);
+      transition: border-color .15s;
+      appearance: none;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-dim);
+    }
+
+    .form-control:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .modal-corr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 9px 16px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      transition: background .15s, transform .1s;
+    }
+
+    .btn-primary:hover  { background: var(--accent-dim); }
+    .btn-primary:active { transform: scale(.98); }
+
+    .btn-secondary {
+      padding: 9px 16px;
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      transition: all .15s;
+    }
+
+    .btn-secondary:hover { background: var(--surface-2); color: var(--text); }
+
+    /* ── Animations ─────────────────────────────────────── */
+    .año-block {
+      animation: fadeUp .3s ease both;
+    }
+    .año-block:nth-child(1) { animation-delay: .05s; }
+    .año-block:nth-child(2) { animation-delay: .10s; }
+    .año-block:nth-child(3) { animation-delay: .15s; }
+    .año-block:nth-child(4) { animation-delay: .20s; }
+    .año-block:nth-child(5) { animation-delay: .25s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .stats-bar .stat-progress { grid-column: span 2; }
+    }
+
+    @media (max-width: 680px) {
+      .cuatris-row { grid-template-columns: 1fr; }
+      .horario-table { grid-template-columns: 44px repeat(5, 1fr); }
+      .h-cell { padding: 5px 6px; }
+      .h-clase-nombre { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">LifeOS</div>
+      <div class="sub">Panel personal de Tobías</div>
+    </div>
+    <nav class="nav-section">
+      <div class="nav-label">Principal</div>
+      <a class="nav-item" href="index.html">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a class="nav-item active" href="facultad.html">
+        <span class="nav-icon">🎓</span> Facultad
+      </a>
+      <a class="nav-item" href="finanzas.html">
+        <span class="nav-icon">💰</span> Finanzas
+      </a>
+      <a class="nav-item" href="metas.html">
+        <span class="nav-icon">🎯</span> Objetivos
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="avatar">TR</div>
+        <div>
+          <div class="user-name" id="sidebar-username">...</div>
+          
+        </div>
+      </div>
+      <a href="#" id="btn-signout" class="btn-signout">⎋ Cerrar sesión</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────── -->
+  <main class="main">
+
+    <div class="page-header">
+      <h1 class="page-title">Facultad</h1>
+      <p class="page-subtitle" id="page-carrera-sub">Licenciatura en Informática · Plan 2015</p>
+    </div>
+
+    <!-- Carrera toggle -->
+    <div style="display:flex;gap:6px;margin-bottom:20px">
+      <button class="view-btn active" id="btn-carrera-li">🎓 Licenciatura (LI)</button>
+      <button class="view-btn" id="btn-carrera-tpi">💻 Tecnicatura (TPI)</button>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Aprobadas</div>
+        <div class="stat-value"><span id="stat-aprobadas">—</span> <span>/ <span id="stat-total">—</span></span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cursando</div>
+        <div class="stat-value" style="color:var(--accent)" id="stat-cursando">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Promedio</div>
+        <div class="stat-value" style="color:var(--green)" id="stat-promedio">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avance</div>
+        <div class="stat-value" id="stat-pct">—</div>
+      </div>
+      <div class="stat-card stat-progress">
+        <div class="stat-label">Progreso de carrera</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-roadmap">⊡ Roadmap</button>
+      <button class="view-btn" id="view-horario">⊟ Horario semanal</button>
+    </div>
+
+    <!-- Roadmap section -->
+    <div id="section-roadmap">
+      <div id="roadmap-grid"></div>
+    </div>
+
+    <!-- Horario section -->
+    <div id="section-horario" style="display:none">
+      <div class="card" style="overflow-x:auto">
+        <div id="horario-grid"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Modal ────────────────────────────────────────────── -->
+  <div id="modal-overlay">
+    <div class="modal">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-meta" id="modal-año"></div>
+
+      <div class="form-group">
+        <label class="form-label">Correlativas</label>
+        <div class="modal-corr" id="modal-corr"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modal-estado">Estado</label>
+        <select class="form-control" id="modal-estado"></select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modal-nota">Nota final (solo si está aprobada)</label>
+        <input type="number" class="form-control" id="modal-nota" min="1" max="10" step="0.5" placeholder="Ej: 7">
+      </div>
+
+      <!-- Schedule panel — shown only when estado = cursando -->
+      <div id="modal-schedule-panel" style="display:none"></div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="modal-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-primary" id="modal-save">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="facultad.js"></script>
+
+</body>
+</html>
