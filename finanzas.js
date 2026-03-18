@@ -1,7 +1,8 @@
 // finanzas.js — Sección Finanzas del Life Dashboard
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const TBL_TXS = 'transactions';
+const TBL_TXS     = 'transactions';
+const TBL_AHORROS = 'ahorros';
 
 const CATEGORIAS_GASTO = [
   'Alimentación', 'Transporte', 'Facultad', 'Salud',

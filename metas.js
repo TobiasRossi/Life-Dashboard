@@ -231,10 +231,10 @@ async function saveMetaModal() {
 }
 
 async function deleteMeta() {
-  const id    = document.getElementById('mm-id').value;
+  const id = document.getElementById('mm-id').value;
   if (!id || !confirm('¿Eliminar esta meta?')) return;
-  const metas = loadM().filter(x => x.id !== parseInt(id));
-  save(LS_METAS, metas);
+  await dbDelete(TBL_METAS, parseInt(id));
+  _metasCache = (_metasCache||[]).filter(x => x.id !== parseInt(id));
   closeMetaModal();
   renderKanban();
   showToast('Meta eliminada');
@@ -337,7 +337,8 @@ async function saveWishModal() {
 async function deleteWish() {
   const id = document.getElementById('wm-id').value;
   if (!id || !confirm('¿Eliminar este item?')) return;
-  save(LS_WISHLIST, loadW().filter(x => x.id !== parseInt(id)));
+  await dbDelete(TBL_WISHLIST, parseInt(id));
+  _wishlistCache = (_wishlistCache||[]).filter(x => x.id !== parseInt(id));
   closeWishModal();
   renderWishlist();
   showToast('Item eliminado');
@@ -436,7 +437,8 @@ async function saveOcioModal() {
 async function deleteOcio() {
   const id = document.getElementById('om-id').value;
   if (!id || !confirm('¿Eliminar este lugar?')) return;
-  save(LS_OCIO, loadO().filter(x => x.id !== parseInt(id)));
+  await dbDelete(TBL_OCIO, parseInt(id));
+  _ocioCache = (_ocioCache||[]).filter(x => x.id !== parseInt(id));
   closeOcioModal();
   renderOcio();
   showToast('Lugar eliminado');
